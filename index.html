@@ -25,7 +25,7 @@ input,select,textarea{flex:1}.pri{background:#1c2740;color:#6ea8ff;font-weight:7
 .sub{display:flex;gap:6px;margin-bottom:8px}.sub button{flex:1}
 </style></head><body>
 <div class="app">
-<header><div><h1>AL Khatoon</h1><div class="hint" id="meta">V1.9</div></div><div id="live" class="bad">connecting</div></header>
+<header><div><h1>AL Khatoon</h1><div class="hint" id="meta">V1.9.1</div></div><div id="live" class="bad">connecting</div></header>
 <div class="row"><input id="q" placeholder="جستجوی ارز"><select id="mkt"><option value="futures">Futures</option><option value="spot">Spot</option></select></div>
 <div class="pairs" id="pairs"></div><div class="tfs" id="tfs"></div>
 <section id="t-signal">
@@ -36,7 +36,7 @@ input,select,textarea{flex:1}.pri{background:#1c2740;color:#6ea8ff;font-weight:7
 <div class="hint" id="saved"></div></div>
 <div class="card grid"><div class="kv"><span>Entry</span><b id="entry">—</b></div><div class="kv"><span>SL</span><b id="sl">—</b></div><div class="kv"><span>TP1</span><b id="tp">—</b></div><div class="kv"><span>RR</span><b>1.5</b></div></div>
 <p class="hint" id="why">Paper only</p></section>
-<section id="t-scan" class="hide card"></section>
+<section id="t-scan" class="hide card"><h3>بهترین سیگنال‌های خودکار</h3><p class="hint" id="scanstat">در حال اسکن 15m همه ارزها…</p><div id="scanlist"></div></section>
 <section id="t-journal" class="hide">
 <div class="card"><h3>ژورنال</h3><div class="hint" id="jstats"></div><div id="jlist"></div></div>
 <div class="card hide" id="editbox"><h3>ویرایش سفارش</h3>
@@ -58,13 +58,13 @@ input,select,textarea{flex:1}.pri{background:#1c2740;color:#6ea8ff;font-weight:7
 <div id="d-chat" class="card hide"><h3>چت</h3><div id="thread" class="hint">ریسک، ورود، ژورنال</div><div class="row"><input id="chat-in" placeholder="پیام"><button class="pri" id="chat-go">ارسال</button></div></div>
 <div id="d-learn" class="card hide"><h3>آموزش روزانه</h3><p id="tip"></p></div>
 </section>
-<section id="t-more" class="hide card"><p>V1.9 عمومی. سفارش واقعی ندارد.</p><p class="hint" id="paperbox"></p></section>
+<section id="t-more" class="hide card"><p>V1.9.1 اسکن خودکار. سفارش واقعی ندارد.</p><p class="hint" id="paperbox"></p></section>
 </div>
 <nav class="dock">
 <button class="pri" data-t="signal">سیگنال</button>
-<button data-t="scan">بازار</button>
+<button data-t="scan">بهترین</button>
 <button data-t="journal">ژورنال</button>
 <button data-t="desk">میز</button>
 <button data-t="more">بیشتر</button>
 </nav>
-<script src="./app.js?v=19"></script></body></html>
+<script src="./app.js?v=21"></script></body></html>
