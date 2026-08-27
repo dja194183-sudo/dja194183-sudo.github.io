@@ -1,7 +1,7 @@
 const P=["BTC/USDT","ETH/USDT","BNB/USDT","SOL/USDT","XRP/USDT","DOGE/USDT","ADA/USDT","AVAX/USDT","LINK/USDT","SUI/USDT","PEPE/USDT","TON/USDT","ARB/USDT","NEAR/USDT","OP/USDT"];
 const TF=["5m","15m","1h","4h"];
 const TIPS=["wait for pullback","do not chase candles","WAIT is a position","risk 0.4%","no revenge trade"];
-const S={sym:"BTC/USDT",mkt:"futures",tf:"15m",sig:null,edit:null,paper:[]};
+const S={sym:"BTC/USDT",mkt:"futures",tf:"15m",sig:null,edit:null,paper:[],best:[]};
 const K={j:"khatoon:j",c:"khatoon:c",p:"khatoon:p"};
 function bsym(){return S.sym.replace("/","")}
 function loadC(){try{return Object.assign({eq:1000,risk:0.4,day:2,open:6},JSON.parse(localStorage.getItem(K.c)||"{}"))}catch(e){return {eq:1000,risk:0.4,day:2,open:6}}}
@@ -19,7 +19,6 @@ function analyze(cs,px){
   const cl=cs.map(x=>x.c), e9=ema(cl,9), e21=ema(cl,21), e50=ema(cl,50);
   const a9=e9[i], a21=e21[i], a50=e50[i], rs=rsi(cl,14);
   const last=cs[i], prev=cs[i-1], prev2=cs[i-2];
-  const dist21=Math.abs(px-a21)/px*100;
   const ext21=(px-a21)/px*100;
   const up=a21>a50 && a9>=a21*0.997;
   const dn=a21<a50 && a9<=a21*1.003;
@@ -27,26 +26,20 @@ function analyze(cs,px){
   const pullS=px>=a21*0.996 && px<=a50*1.003;
   const recL=last.c>=last.o || last.c>prev.l;
   const recS=last.c<=last.o || last.c<prev.h;
-  const chaseL=ext21>0.9;
-  const chaseS=ext21<-0.9;
   const swingL=Math.min(last.l,prev.l,prev2.l);
   const swingH=Math.max(last.h,prev.h,prev2.h);
-  if(up && pullL && recL && !chaseL && rs<72){
-    const sl=swingL*0.998; const risk=Math.abs(px-sl)||px*0.004; const tp=px+1.6*risk;
-    return {d:"LONG",sc:72,sl,tp,why:"pullback to EMA21 then reclaim · not chase"};
-  }
-  if(dn && pullS && recS && !chaseS && rs>28){
-    const sl=swingH*1.002; const risk=Math.abs(sl-px)||px*0.004; const tp=px-1.6*risk;
-    return {d:"SHORT",sc:72,sl,tp,why:"pullback to EMA21 then reject · not chase"};
-  }
-  if(chaseL) return {d:"WAIT",sc:40,sl:px,tp:px,why:"stretched above EMA · do not buy high"};
-  if(chaseS) return {d:"WAIT",sc:40,sl:px,tp:px,why:"stretched below EMA · do not sell low"};
-  return {d:"WAIT",sc:35,sl:px,tp:px,why:"no pullback confirm · wait"};
+  if(up && pullL && recL && ext21<=0.9 && rs<72){const sl=swingL*0.998; const risk=Math.abs(px-sl)||px*0.004; return {d:"LONG",sc:72,sl,tp:px+1.6*risk,why:"pullback reclaim"}}
+  if(dn && pullS && recS && ext21>=-0.9 && rs>28){const sl=swingH*1.002; const risk=Math.abs(sl-px)||px*0.004; return {d:"SHORT",sc:72,sl,tp:px-1.6*risk,why:"pullback reject"}}
+  if(ext21>0.9) return {d:"WAIT",sc:40,sl:px,tp:px,why:"stretched high"};
+  if(ext21<-0.9) return {d:"WAIT",sc:40,sl:px,tp:px,why:"stretched low"};
+  return {d:"WAIT",sc:35,sl:px,tp:px,why:"no confirm"};
 }
 function fmt(n){return Number.isFinite(+n)?(+n>50?(+n).toFixed(1):(+n).toFixed(4)):"-"}
 function drawPairs(){const q=document.getElementById("q").value.toUpperCase().replace("/",""); document.getElementById("pairs").innerHTML=P.filter(p=>!q||p.replace("/","").includes(q)).map(p=>`<button class="${p===S.sym?"pri":""}" data-p="${p}">${p}</button>`).join("")}
 function drawTf(){document.getElementById("tfs").innerHTML=TF.map(t=>`<button class="${t===S.tf?"pri":""}" data-tf="${t}">${t}</button>`).join("")}
 function showC(){const c=loadC(); document.getElementById("c-show").textContent=c.eq; document.getElementById("c-rshow").textContent=c.risk+"%"; document.getElementById("c-eq").value=c.eq; document.getElementById("c-risk").value=c.risk; document.getElementById("c-day").value=c.day; document.getElementById("c-open").value=c.open}
+function renderBest(){const box=document.getElementById("scanlist"); const st=document.getElementById("scanstat"); if(!box)return; const rows=S.best||[]; st.textContent=rows.length? ("15m auto · "+rows.length+" setup"):"no valid setup now"; box.innerHTML=rows.map(r=>`<div class="item"><button data-p="${r.sym}">${r.sym}</button> <b class="${r.d}">${r.d}</b> ${r.sc}%<div class="hint">${fmt(r.px)} SL ${fmt(r.sl)} TP ${fmt(r.tp)}</div></div>`).join("")||"<p class=hint>WAIT on all pairs</p>"}
+async function scanBest(){const st=document.getElementById("scanstat"); if(st) st.textContent="scanning all 15m..."; const out=[]; for(const pair of P){ try{ const s=pair.replace("/",""); const tk=await get("https://data-api.binance.vision/api/v3/ticker/24hr?symbol="+s); const kl=await get("https://data-api.binance.vision/api/v3/klines?symbol="+s+"&interval=15m&limit=180"); const px=Number(tk.lastPrice||tk.c); const cs=(kl||[]).map(r=>({o:+r[1],h:+r[2],l:+r[3],c:+r[4]})); const sig=analyze(cs,px); if(sig.d!=="WAIT") out.push({sym:pair,d:sig.d,sc:sig.sc,px,sl:sig.sl,tp:sig.tp}); }catch(e){} } out.sort((a,b)=>b.sc-a.sc); S.best=out; renderBest();}
 function renderJ(){const rows=J(); const open=rows.filter(r=>r.res==="OPEN").length; const wins=rows.filter(r=>r.res==="WIN").length; const closed=rows.filter(r=>r.res!=="OPEN").length; jstats.textContent="open "+open+" · win "+wins+" / "+closed; jlist.innerHTML=rows.map((r,i)=>`<div class="item"><div>${r.sym} <b class="${r.side}">${r.side}</b> ${r.res}<div class="hint">${r.px} SL ${r.sl||"-"} TP ${r.tp||"-"}</div></div><button data-e="${i}">edit</button></div>`).join("")||"empty"}
 function fillEdit(i){const r=J()[i]; if(!r)return; S.edit=i; editbox.classList.remove("hide"); document.getElementById("e-sym").value=r.sym; document.getElementById("e-side").value=r.side; document.getElementById("e-res").value=r.res||"OPEN"; document.getElementById("e-px").value=r.px; document.getElementById("e-sl").value=r.sl||""; document.getElementById("e-tp").value=r.tp||""; document.getElementById("e-exit").value=r.exit||""; document.getElementById("e-note").value=r.note||""}
 function riskBox(){const c=loadC(); const px=S.sig&&S.sig.px; const sl=S.sig&&S.sig.sl; if(!px||!sl){document.getElementById("r-out").textContent="need signal";return} const riskAmt=c.eq*(c.risk/100); const qty=riskAmt/Math.abs(px-sl||1); document.getElementById("r-out").textContent="risk "+riskAmt.toFixed(2)+" qty "+qty.toFixed(6)+" day cap "+(c.eq*c.day/100).toFixed(2)}
@@ -63,8 +56,8 @@ document.getElementById("e-del").onclick=()=>{const rows=J(); if(S.edit==null)re
 document.getElementById("c-save").onclick=()=>{saveC({eq:+document.getElementById("c-eq").value||1000,risk:+document.getElementById("c-risk").value||0.4,day:+document.getElementById("c-day").value||2,open:+document.getElementById("c-open").value||6})};
 document.querySelector("#t-desk .sub").onclick=e=>{const b=e.target.closest("button"); if(!b)return; document.querySelectorAll("#t-desk .sub button").forEach(x=>x.classList.remove("pri")); b.classList.add("pri"); ["cap","risk","chat","learn"].forEach(x=>document.getElementById("d-"+x).classList.toggle("hide",b.dataset.d!==x)); if(b.dataset.d==="risk") riskBox()};
 document.getElementById("chat-go").onclick=()=>{const t=document.getElementById("chat-in").value.trim(); if(!t)return; const c=loadC(); let a="risk "+c.risk+"%"; if(/entry|signal|ورود|سیگنال/.test(t)) a=S.sig?(S.sig.d+" "+S.sig.sc):"no signal"; if(/journal|ژورنال/.test(t)) a=J().length+" rows"; thread.innerHTML="<div class='item'>"+t+"</div><div class='item'>"+a+"</div>"+thread.innerHTML};
-document.querySelector(".dock").onclick=e=>{const b=e.target.closest("button"); if(!b)return; document.querySelectorAll(".dock button").forEach(x=>x.classList.remove("pri")); b.classList.add("pri"); ["signal","scan","journal","desk","more"].forEach(t=>document.getElementById("t-"+t).classList.toggle("hide",b.dataset.t!==t)); if(b.dataset.t==="journal") renderJ(); if(b.dataset.t==="scan") document.getElementById("t-scan").innerHTML=P.map(p=>`<div class="item"><button data-p="${p}">${p}</button></div>`).join(""); if(b.dataset.t==="desk") showC()};
-document.getElementById("t-scan").onclick=e=>{const b=e.target.closest("button"); if(!b)return; S.sym=b.dataset.p; drawPairs(); document.querySelector("[data-t=signal]").click(); load()};
+document.querySelector(".dock").onclick=e=>{const b=e.target.closest("button"); if(!b)return; document.querySelectorAll(".dock button").forEach(x=>x.classList.remove("pri")); b.classList.add("pri"); ["signal","scan","journal","desk","more"].forEach(t=>document.getElementById("t-"+t).classList.toggle("hide",b.dataset.t!==t)); if(b.dataset.t==="journal") renderJ(); if(b.dataset.t==="scan"){renderBest(); scanBest()} if(b.dataset.t==="desk") showC()};
+document.getElementById("t-scan").onclick=e=>{const b=e.target.closest("button"); if(!b||!b.dataset.p)return; S.sym=b.dataset.p; S.tf="15m"; drawPairs(); drawTf(); document.querySelector("[data-t=signal]").click(); load()};
 document.getElementById("tip").textContent=TIPS[new Date().getDate()%TIPS.length];
 try{S.paper=JSON.parse(localStorage.getItem(K.p)||"[]")}catch(e){S.paper=[]}
-drawPairs(); drawTf(); showC(); load(); setInterval(load,8000);
+drawPairs(); drawTf(); showC(); load(); scanBest(); setInterval(load,8000); setInterval(scanBest,60000);
