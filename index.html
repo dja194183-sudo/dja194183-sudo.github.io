@@ -37,7 +37,7 @@ input,select{flex:1}.pri{background:#1c2740;color:#6ea8ff;font-weight:700}
 </section>
 <section id="t-scan" class="hide card"></section>
 <section id="t-journal" class="hide card"><div id="jlist"></div></section>
-<section id="t-more" class="hide card"><p>V1.8.2 موبایل کامل. سفارش واقعی ندارد.</p></section>
+<section id="t-more" class="hide card"><p>V1.8.3. اگر Toobit بسته باشد از Binance Vision قیمت می‌گیرد. سفارش واقعی ندارد.</p></section>
 </div>
 <nav class="dock">
 <button class="pri" data-t="signal">سیگنال</button>
@@ -49,16 +49,25 @@ input,select{flex:1}.pri{background:#1c2740;color:#6ea8ff;font-weight:700}
 const P=["BTC/USDT","ETH/USDT","BNB/USDT","SOL/USDT","XRP/USDT","DOGE/USDT","ADA/USDT","AVAX/USDT","LINK/USDT","SUI/USDT","PEPE/USDT","TON/USDT","ARB/USDT","NEAR/USDT","OP/USDT"];
 const TF=["5m","15m","1h","4h"];
 const S={sym:"BTC/USDT",mkt:"futures",tf:"15m",sig:null};
-const raw=()=>{const r=S.sym.replace("/","");return S.mkt==="futures"?r.replace("USDT","")+"-SWAP-USDT":r};
+function bsym(){return S.sym.replace("/","")}
 function unwrap(d){if(!d)return d;if(typeof d==="string"){try{return JSON.parse(d)}catch(e){return d}}if(d.contents){try{return JSON.parse(d.contents)}catch(e){return d.contents}}return d}
-async function api(path){
-  const direct="https://api.toobit.com"+path;
-  const urls=[direct,"https://corsproxy.io/?"+encodeURIComponent(direct),"https://api.allorigins.win/raw?url="+encodeURIComponent(direct)];
-  for(const u of urls){try{const r=await fetch(u); if(!r.ok) continue; let d=await r.json(); return unwrap(d)}catch(e){}}
-  throw 0;
+async function get(url){const r=await fetch(url); if(!r.ok) throw 0; return unwrap(await r.json())}
+async function loadBinance(){
+  const s=bsym(); const tf=S.tf;
+  const tk=await get("https://data-api.binance.vision/api/v3/ticker/24hr?symbol="+s);
+  const kl=await get("https://data-api.binance.vision/api/v3/klines?symbol="+s+"&interval="+tf+"&limit=180");
+  return {px:Number(tk.lastPrice||tk.c), ch:Number(tk.priceChangePercent||0), kl, src:"Binance"};
+}
+async function loadToobit(){
+  const raw=S.mkt==="futures"?bsym().replace("USDT","")+"-SWAP-USDT":bsym();
+  const tPath=S.mkt==="futures"?"/quote/v1/contract/ticker/24hr?symbol="+raw:"/quote/v1/ticker/24hr?symbol="+raw;
+  const kPath=S.mkt==="futures"?"/quote/v1/contract/klines?symbol="+raw+"&interval="+S.tf+"&limit=180":"/quote/v1/klines?symbol="+raw+"&interval="+S.tf+"&limit=180";
+  const tk=await get("https://api.toobit.com"+tPath);
+  const kl=await get("https://api.toobit.com"+kPath);
+  const row=Array.isArray(tk)?tk[0]:tk;
+  return {px:Number(row.c||row.p), ch:Number(row.pcp||0)*100, kl, src:"Toobit"};
 }
 function ema(a,n){const o=Array(a.length).fill(null);if(a.length<n)return o;const k=2/(n+1);let s=0;for(let i=0;i<n;i++)s+=a[i];s/=n;o[n-1]=s;for(let i=n;i<a.length;i++){s=a[i]*k+s*(1-k);o[i]=s}return o}
-function pickPrice(row){if(!row)return NaN;return Number(row.c||row.p||row.last||row.price)}
 function analyze(cs,px){
   const i=cs.length-1,cl=cs.map(x=>x.c),e9=ema(cl,9),e21=ema(cl,21),e50=ema(cl,50);
   if(!e9[i]||!e21[i]||!e50[i]) return {d:"WAIT",sc:0,sl:px,tp:px,why:"low candles"};
@@ -68,9 +77,7 @@ function analyze(cs,px){
   else if(e9[i]>e21[i]){d="LONG";tr=12}
   else if(e9[i]<e21[i]){d="SHORT";tr=12}
   const sc=Math.min(96,tr+48);
-  const sl=d==="LONG"?px*0.986:px*1.014;
-  const tp=d==="LONG"?px*1.021:px*0.979;
-  return {d:sc>=58?d:"WAIT",sc,sl,tp,why:"EMA "+tr};
+  return {d:sc>=58?d:"WAIT",sc,sl:d==="LONG"?px*0.986:px*1.014,tp:d==="LONG"?px*1.021:px*0.979,why:"EMA "+tr};
 }
 function J(){try{return JSON.parse(localStorage.getItem("khatoon:j")||"[]")}catch(e){return[]}}
 function drawPairs(){const q=document.getElementById("q").value.toUpperCase().replace("/","");document.getElementById("pairs").innerHTML=P.filter(p=>!q||p.replace("/","").includes(q)).map(p=>`<button class="${p===S.sym?"pri":""}" data-p="${p}">${p}</button>`).join("")}
@@ -79,18 +86,15 @@ function fmt(n){return Number.isFinite(n)?(n>50?n.toFixed(1):n.toFixed(4)):"—"
 async function load(){
   document.getElementById("meta").textContent=S.sym+" · "+S.tf+" · "+S.mkt;
   try{
-    const s=raw();
-    const tPath=S.mkt==="futures"?`/quote/v1/contract/ticker/24hr?symbol=${s}`:`/quote/v1/ticker/24hr?symbol=${s}`;
-    const kPath=S.mkt==="futures"?`/quote/v1/contract/klines?symbol=${s}&interval=${S.tf}&limit=180`:`/quote/v1/klines?symbol=${s}&interval=${S.tf}&limit=180`;
-    const [tk,kl]=await Promise.all([api(tPath),api(kPath)]);
-    const row=Array.isArray(tk)?tk[0]:tk; const px=pickPrice(row); if(!Number.isFinite(px)) throw 0;
-    const ch=Number(row.pcp||0)*100; const cs=(Array.isArray(kl)?kl:[]).map(r=>({c:+r[4]}));
+    let data; try{data=await loadToobit()}catch(e){data=await loadBinance()}
+    const px=data.px; if(!Number.isFinite(px)) throw 0;
+    const cs=(data.kl||[]).map(r=>({c:+r[4]}));
     const sig=analyze(cs,px); S.sig={...sig,px};
-    live.className="ok"; live.textContent="Live";
-    price.textContent=px.toLocaleString(); chg.textContent=(ch>=0?"+":"")+ch.toFixed(2)+"%";
+    live.className="ok"; live.textContent="Live "+data.src;
+    price.textContent=px.toLocaleString(); chg.textContent=(data.ch>=0?"+":"")+Number(data.ch).toFixed(2)+"%";
     dir.className=sig.d; dir.textContent=sig.d; score.className=sig.d; score.textContent=sig.sc+"%";
     grade.textContent=sig.d==="WAIT"?"WAIT":"signal on";
-    entry.textContent=fmt(px); sl.textContent=fmt(sig.sl); tp.textContent=fmt(sig.tp); why.textContent=sig.why;
+    entry.textContent=fmt(px); sl.textContent=fmt(sig.sl); tp.textContent=fmt(sig.tp); why.textContent=sig.why+" · "+data.src;
   }catch(e){live.className="bad"; live.textContent="retry"}
 }
 document.getElementById("pairs").onclick=e=>{const b=e.target.closest("button"); if(!b)return; S.sym=b.dataset.p; drawPairs(); load()};
