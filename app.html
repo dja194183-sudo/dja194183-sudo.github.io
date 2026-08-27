@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AL Khatoon</title>
+<style>
+body{margin:0;background:#07080c;color:#e8edf5;font-family:system-ui}
+.wrap{max-width:480px;margin:auto;padding:16px 16px 80px}
+button,select,input{background:#161b24;color:#e8edf5;border:1px solid #242b38;border-radius:12px;padding:10px}
+.card{background:#10131a;border:1px solid #242b38;border-radius:16px;padding:14px;margin:10px 0}
+.px{font-size:28px;font-weight:800}
+.LONG{color:#3dd68c}.SHORT{color:#ff5d6c}.WAIT{color:#f5c542}
+.dock{position:fixed;bottom:0;left:0;right:0;display:flex;gap:6px;padding:10px;background:#07080c}
+.dock button{flex:1;min-height:44px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h2>AL Khatoon</h2>
+<p id="st">connecting</p>
+<select id="sym">
+<option>BTC/USDT</option><option>ETH/USDT</option><option>SOL/USDT</option><option>XRP/USDT</option>
+</select>
+<select id="tf"><option>15m</option><option>5m</option><option>1h</option><option>4h</option></select>
+<div class="card"><div class="px" id="px">-</div><div id="ch"></div></div>
+<div class="card" style="text-align:center"><div id="dir" class="WAIT" style="font-size:32px">WAIT</div><div id="sc" style="font-size:36px">0%</div>
+<button id="sv">ثبت لحظه‌ای</button><p id="ok"></p></div>
+</div>
+<script>
+async function load(){
+const s=document.getElementById('sym').value.replace('/','');
+const tf=document.getElementById('tf').value;
+try{
+const u='https://corsproxy.io/?'+encodeURIComponent('https://api.toobit.com/quote/v1/contract/ticker/24hr?symbol='+s.replace('USDT','')+'-SWAP-USDT');
+const r=await fetch(u); const d=await r.json(); const row=Array.isArray(d)?d[0]:d;
+const p=Number(row.c); const c=Number(row.pcp||0)*100;
+document.getElementById('px').textContent=p.toLocaleString();
+document.getElementById('ch').textContent=(c>=0?'+':'')+c.toFixed(2)+'%';
+document.getElementById('st').textContent='Live '+s;
+const dir=c>=0.15?'LONG':c<=-0.15?'SHORT':'WAIT';
+document.getElementById('dir').className=dir; document.getElementById('dir').textContent=dir;
+document.getElementById('sc').textContent=Math.min(90,55+Math.abs(c)*8).toFixed(0)+'%';
+window._last={s,p,dir};
+}catch(e){document.getElementById('st').textContent='offline'}
+}
+document.getElementById('sv').onclick=function(){if(!window._last)return;var a=JSON.parse(localStorage.getItem('k')||'[]');a.unshift(window._last);localStorage.setItem('k',JSON.stringify(a.slice(0,50)));document.getElementById('ok').textContent='ثبت شد'};
+document.getElementById('sym').onchange=load; document.getElementById('tf').onchange=load;
+load(); setInterval(load,8000);
+</script>
+</body></html>
