@@ -5,104 +5,66 @@
 <title>AL Khatoon</title>
 <style>
 body{margin:0;background:#07080c;color:#e8edf5;font-family:system-ui}
-.app{max-width:480px;margin:auto;padding:12px 12px 92px}
+.app{max-width:480px;margin:auto;padding:12px 12px 96px}
 header{display:flex;justify-content:space-between}
-h1{margin:0;font-size:18px}.hint{color:#8b95a8;font-size:12px}
+h1{margin:0;font-size:18px}h3{margin:0 0 8px;font-size:14px}
+.hint{color:#8b95a8;font-size:12px}
 .ok{color:#3dd68c}.bad{color:#f5c542}
 .row{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
-input,select,button{background:#161b24;color:#e8edf5;border:1px solid #242b38;border-radius:12px;padding:10px;font-size:13px}
-input,select{flex:1}.pri{background:#1c2740;color:#6ea8ff;font-weight:700}
-.pairs,.tfs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.pairs{max-height:74px;overflow:auto}
+input,select,button,textarea{background:#161b24;color:#e8edf5;border:1px solid #242b38;border-radius:12px;padding:10px;font-size:13px}
+input,select,textarea{flex:1}.pri{background:#1c2740;color:#6ea8ff;font-weight:700}
+.pairs,.tfs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.pairs{max-height:70px;overflow:auto}
 .card{background:#10131a;border:1px solid #242b38;border-radius:16px;padding:14px;margin:0 0 10px}
 .px{font-size:28px;font-weight:800}.sig{text-align:center}
 .LONG{color:#3dd68c}.SHORT{color:#ff5d6c}.WAIT{color:#f5c542}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .kv{background:#161b24;border-radius:12px;padding:10px}.kv span{display:block;color:#8b95a8;font-size:11px}
-.item{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #242b38}
-.dock{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(480px,100%);display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:8px 8px 12px;background:#07080cf5;border-top:1px solid #242b38}
-.dock button{min-height:48px;font-weight:700;font-size:12px}.hide{display:none}
+.item{padding:10px 0;border-bottom:1px solid #242b38;font-size:13px}
+.dock{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(480px,100%);display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:8px 6px 12px;background:#07080cf5;border-top:1px solid #242b38}
+.dock button{min-height:46px;font-weight:700;font-size:11px}.hide{display:none}
+.sub{display:flex;gap:6px;margin-bottom:8px}.sub button{flex:1}
 </style></head><body>
 <div class="app">
-<header><div><h1>AL Khatoon</h1><div class="hint" id="meta">mobile</div></div><div id="live" class="bad">connecting</div></header>
+<header><div><h1>AL Khatoon</h1><div class="hint" id="meta">V1.9</div></div><div id="live" class="bad">connecting</div></header>
 <div class="row"><input id="q" placeholder="جستجوی ارز"><select id="mkt"><option value="futures">Futures</option><option value="spot">Spot</option></select></div>
 <div class="pairs" id="pairs"></div><div class="tfs" id="tfs"></div>
 <section id="t-signal">
 <div class="card"><div class="px" id="price">—</div><div class="hint" id="chg"></div></div>
 <div class="card sig"><div id="dir" class="WAIT" style="font-size:32px;font-weight:800">WAIT</div><div id="score" class="WAIT" style="font-size:40px">0%</div>
 <div class="hint" id="grade"></div>
-<div class="row"><button class="pri" id="save">ثبت لحظه‌ای در ژورنال</button></div>
+<div class="row"><button class="pri" id="save">ثبت لحظه‌ای</button><button id="paper">Open paper</button></div>
 <div class="hint" id="saved"></div></div>
 <div class="card grid"><div class="kv"><span>Entry</span><b id="entry">—</b></div><div class="kv"><span>SL</span><b id="sl">—</b></div><div class="kv"><span>TP1</span><b id="tp">—</b></div><div class="kv"><span>RR</span><b>1.5</b></div></div>
-<p class="hint" id="why">Paper only</p>
-</section>
+<p class="hint" id="why">Paper only</p></section>
 <section id="t-scan" class="hide card"></section>
-<section id="t-journal" class="hide card"><div id="jlist"></div></section>
-<section id="t-more" class="hide card"><p>V1.8.3. اگر Toobit بسته باشد از Binance Vision قیمت می‌گیرد. سفارش واقعی ندارد.</p></section>
+<section id="t-journal" class="hide">
+<div class="card"><h3>ژورنال</h3><div class="hint" id="jstats"></div><div id="jlist"></div></div>
+<div class="card hide" id="editbox"><h3>ویرایش سفارش</h3>
+<input id="e-sym" placeholder="نماد">
+<div class="row"><select id="e-side"><option>LONG</option><option>SHORT</option></select><select id="e-res"><option>OPEN</option><option>WIN</option><option>LOSS</option><option>BE</option></select></div>
+<div class="row"><input id="e-px" type="number" placeholder="ورود"><input id="e-sl" type="number" placeholder="SL"></div>
+<div class="row"><input id="e-tp" type="number" placeholder="TP"><input id="e-exit" type="number" placeholder="خروج"></div>
+<textarea id="e-note" rows="2" placeholder="یادداشت"></textarea>
+<div class="row"><button class="pri" id="e-save">ذخیره ویرایش</button><button id="e-del">حذف</button></div></div>
+</section>
+<section id="t-desk" class="hide">
+<div class="sub"><button class="pri" data-d="cap">سرمایه</button><button data-d="risk">ریسک</button><button data-d="chat">چت</button><button data-d="learn">آموزش</button></div>
+<div id="d-cap" class="card"><h3>مدیریت سرمایه</h3>
+<div class="row"><input id="c-eq" type="number" placeholder="equity"><input id="c-risk" type="number" placeholder="risk %"></div>
+<div class="row"><input id="c-day" type="number" placeholder="daily %"><input id="c-open" type="number" placeholder="max open"></div>
+<button class="pri" id="c-save">ذخیره قوانین</button>
+<div class="grid" style="margin-top:8px"><div class="kv"><span>Equity</span><b id="c-show">1000</b></div><div class="kv"><span>ریسک</span><b id="c-rshow">0.4%</b></div></div></div>
+<div id="d-risk" class="card hide"><h3>ریسک</h3><div class="hint" id="r-out">اول سیگنال</div></div>
+<div id="d-chat" class="card hide"><h3>چت</h3><div id="thread" class="hint">ریسک، ورود، ژورنال</div><div class="row"><input id="chat-in" placeholder="پیام"><button class="pri" id="chat-go">ارسال</button></div></div>
+<div id="d-learn" class="card hide"><h3>آموزش روزانه</h3><p id="tip"></p></div>
+</section>
+<section id="t-more" class="hide card"><p>V1.9 عمومی. سفارش واقعی ندارد.</p><p class="hint" id="paperbox"></p></section>
 </div>
 <nav class="dock">
 <button class="pri" data-t="signal">سیگنال</button>
 <button data-t="scan">بازار</button>
 <button data-t="journal">ژورنال</button>
+<button data-t="desk">میز</button>
 <button data-t="more">بیشتر</button>
 </nav>
-<script>
-const P=["BTC/USDT","ETH/USDT","BNB/USDT","SOL/USDT","XRP/USDT","DOGE/USDT","ADA/USDT","AVAX/USDT","LINK/USDT","SUI/USDT","PEPE/USDT","TON/USDT","ARB/USDT","NEAR/USDT","OP/USDT"];
-const TF=["5m","15m","1h","4h"];
-const S={sym:"BTC/USDT",mkt:"futures",tf:"15m",sig:null};
-function bsym(){return S.sym.replace("/","")}
-function unwrap(d){if(!d)return d;if(typeof d==="string"){try{return JSON.parse(d)}catch(e){return d}}if(d.contents){try{return JSON.parse(d.contents)}catch(e){return d.contents}}return d}
-async function get(url){const r=await fetch(url); if(!r.ok) throw 0; return unwrap(await r.json())}
-async function loadBinance(){
-  const s=bsym(); const tf=S.tf;
-  const tk=await get("https://data-api.binance.vision/api/v3/ticker/24hr?symbol="+s);
-  const kl=await get("https://data-api.binance.vision/api/v3/klines?symbol="+s+"&interval="+tf+"&limit=180");
-  return {px:Number(tk.lastPrice||tk.c), ch:Number(tk.priceChangePercent||0), kl, src:"Binance"};
-}
-async function loadToobit(){
-  const raw=S.mkt==="futures"?bsym().replace("USDT","")+"-SWAP-USDT":bsym();
-  const tPath=S.mkt==="futures"?"/quote/v1/contract/ticker/24hr?symbol="+raw:"/quote/v1/ticker/24hr?symbol="+raw;
-  const kPath=S.mkt==="futures"?"/quote/v1/contract/klines?symbol="+raw+"&interval="+S.tf+"&limit=180":"/quote/v1/klines?symbol="+raw+"&interval="+S.tf+"&limit=180";
-  const tk=await get("https://api.toobit.com"+tPath);
-  const kl=await get("https://api.toobit.com"+kPath);
-  const row=Array.isArray(tk)?tk[0]:tk;
-  return {px:Number(row.c||row.p), ch:Number(row.pcp||0)*100, kl, src:"Toobit"};
-}
-function ema(a,n){const o=Array(a.length).fill(null);if(a.length<n)return o;const k=2/(n+1);let s=0;for(let i=0;i<n;i++)s+=a[i];s/=n;o[n-1]=s;for(let i=n;i<a.length;i++){s=a[i]*k+s*(1-k);o[i]=s}return o}
-function analyze(cs,px){
-  const i=cs.length-1,cl=cs.map(x=>x.c),e9=ema(cl,9),e21=ema(cl,21),e50=ema(cl,50);
-  if(!e9[i]||!e21[i]||!e50[i]) return {d:"WAIT",sc:0,sl:px,tp:px,why:"low candles"};
-  let d="WAIT",tr=6;
-  if(e9[i]>e21[i]&&e21[i]>e50[i]&&px>e21[i]){d="LONG";tr=20}
-  else if(e9[i]<e21[i]&&e21[i]<e50[i]&&px<e21[i]){d="SHORT";tr=20}
-  else if(e9[i]>e21[i]){d="LONG";tr=12}
-  else if(e9[i]<e21[i]){d="SHORT";tr=12}
-  const sc=Math.min(96,tr+48);
-  return {d:sc>=58?d:"WAIT",sc,sl:d==="LONG"?px*0.986:px*1.014,tp:d==="LONG"?px*1.021:px*0.979,why:"EMA "+tr};
-}
-function J(){try{return JSON.parse(localStorage.getItem("khatoon:j")||"[]")}catch(e){return[]}}
-function drawPairs(){const q=document.getElementById("q").value.toUpperCase().replace("/","");document.getElementById("pairs").innerHTML=P.filter(p=>!q||p.replace("/","").includes(q)).map(p=>`<button class="${p===S.sym?"pri":""}" data-p="${p}">${p}</button>`).join("")}
-function drawTf(){document.getElementById("tfs").innerHTML=TF.map(t=>`<button class="${t===S.tf?"pri":""}" data-tf="${t}">${t}</button>`).join("")}
-function fmt(n){return Number.isFinite(n)?(n>50?n.toFixed(1):n.toFixed(4)):"—"}
-async function load(){
-  document.getElementById("meta").textContent=S.sym+" · "+S.tf+" · "+S.mkt;
-  try{
-    let data; try{data=await loadToobit()}catch(e){data=await loadBinance()}
-    const px=data.px; if(!Number.isFinite(px)) throw 0;
-    const cs=(data.kl||[]).map(r=>({c:+r[4]}));
-    const sig=analyze(cs,px); S.sig={...sig,px};
-    live.className="ok"; live.textContent="Live "+data.src;
-    price.textContent=px.toLocaleString(); chg.textContent=(data.ch>=0?"+":"")+Number(data.ch).toFixed(2)+"%";
-    dir.className=sig.d; dir.textContent=sig.d; score.className=sig.d; score.textContent=sig.sc+"%";
-    grade.textContent=sig.d==="WAIT"?"WAIT":"signal on";
-    entry.textContent=fmt(px); sl.textContent=fmt(sig.sl); tp.textContent=fmt(sig.tp); why.textContent=sig.why+" · "+data.src;
-  }catch(e){live.className="bad"; live.textContent="retry"}
-}
-document.getElementById("pairs").onclick=e=>{const b=e.target.closest("button"); if(!b)return; S.sym=b.dataset.p; drawPairs(); load()};
-document.getElementById("tfs").onclick=e=>{const b=e.target.closest("button"); if(!b)return; S.tf=b.dataset.tf; drawTf(); load()};
-document.getElementById("q").oninput=drawPairs;
-document.getElementById("mkt").onchange=e=>{S.mkt=e.target.value; load()};
-document.getElementById("save").onclick=()=>{if(!S.sig||!Number.isFinite(S.sig.px))return; localStorage.setItem("khatoon:j",JSON.stringify([{sym:S.sym,d:S.sig.d,px:S.sig.px},...J()].slice(0,80))); saved.textContent="saved "+S.sig.px};
-document.querySelector(".dock").onclick=e=>{const b=e.target.closest("button"); if(!b)return; document.querySelectorAll(".dock button").forEach(x=>x.classList.remove("pri")); b.classList.add("pri"); ["signal","scan","journal","more"].forEach(t=>document.getElementById("t-"+t).classList.toggle("hide",b.dataset.t!==t)); if(b.dataset.t==="journal") jlist.innerHTML=J().map(r=>`<div class="item"><span>${r.sym} ${r.d}</span><span>${r.px}</span></div>`).join("")||"empty"; if(b.dataset.t==="scan") document.getElementById("t-scan").innerHTML=P.map(p=>`<div class="item"><button data-p="${p}">${p}</button></div>`).join("")};
-document.getElementById("t-scan").onclick=e=>{const b=e.target.closest("button"); if(!b)return; S.sym=b.dataset.p; drawPairs(); document.querySelector("[data-t=signal]").click(); load()};
-drawPairs(); drawTf(); load(); setInterval(load,8000);
-</script></body></html>
+<script src="./app.js?v=19"></script></body></html>
